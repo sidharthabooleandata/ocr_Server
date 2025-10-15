@@ -7,7 +7,7 @@ from pdf2image import convert_from_bytes
 
 app = FastAPI(title="EasyOCR CPU Server")
 
-# Initialize EasyOCR reader with CPU
+# Initialize EasyOCR reader (CPU mode)
 reader = easyocr.Reader(['en'], gpu=False)
 
 @app.post("/parse")
@@ -17,7 +17,6 @@ async def parse_document(file: UploadFile = File(...)):
         extracted_text = ""
 
         if file.filename.lower().endswith(".pdf"):
-            # Convert PDF pages to images
             images = convert_from_bytes(file_bytes)
             for img in images:
                 img_bytes = io.BytesIO()
@@ -25,7 +24,6 @@ async def parse_document(file: UploadFile = File(...)):
                 result = reader.readtext(img_bytes.getvalue())
                 extracted_text += " ".join([t[1] for t in result]) + "\n"
         else:
-            # Process image files
             img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
             result = reader.readtext(file_bytes)
             extracted_text = " ".join([t[1] for t in result])
@@ -33,7 +31,4 @@ async def parse_document(file: UploadFile = File(...)):
         return JSONResponse(content={"text": extracted_text})
 
     except Exception as e:
-        return JSONResponse(
-            content={"text": "", "error": str(e)},
-            status_code=500
-        )
+        return JSONResponse(content={"text": "", "error": str(e)}, status_code=500)
