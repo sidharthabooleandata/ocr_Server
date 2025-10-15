@@ -1,35 +1,25 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
 import easyocr
-from PIL import Image
+from fastapi.middleware.cors import CORSMiddleware
 import io
-from pdf2image import convert_from_bytes
+from PIL import Image
 
-app = FastAPI(title="EasyOCR CPU Server")
+app = FastAPI()
 
-# CPU-only reader
+# Allow CORS so your Streamlit can access it
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 reader = easyocr.Reader(['en'], gpu=False)
 
 @app.post("/parse")
-async def parse_document(file: UploadFile = File(...)):
-    try:
-        file_bytes = await file.read()
-        extracted_text = ""
-
-        if file.filename.lower().endswith(".pdf"):
-            # Convert PDF pages to images
-            images = convert_from_bytes(file_bytes)
-            for img in images:
-                buf = io.BytesIO()
-                img.save(buf, format="PNG")
-                result = reader.readtext(buf.getvalue())
-                extracted_text += " ".join([t[1] for t in result]) + "\n"
-        else:
-            img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-            result = reader.readtext(file_bytes)
-            extracted_text = " ".join([t[1] for t in result])
-
-        return JSONResponse(content={"text": extracted_text})
-
-    except Exception as e:
-        return JSONResponse(content={"text": "", "error": str(e)}, status_code=500)
+async def parse(file: UploadFile = File(...)):
+    content = await file.read()
+    img = Image.open(io.BytesIO(content)).convert("RGB")
+    result = reader.readtext(img)
+    text = " ".join([txt for (_, txt, _) in result])
+    return {"text": text}
