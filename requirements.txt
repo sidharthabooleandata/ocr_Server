@@ -2,5 +2,3 @@ fastapi
 uvicorn
 easyocr
 pillow
-pdf2image
-python-multipart
