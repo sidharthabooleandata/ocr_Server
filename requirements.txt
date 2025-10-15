@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 easyocr
-torch==2.3.1+cpu  # CPU-only version
 pillow
 pdf2image
 python-multipart
